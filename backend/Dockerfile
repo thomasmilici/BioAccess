@@ -15,11 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download MediaPipe models during build to avoid cold-start delay
-COPY services/model_loader.py services/model_loader.py
+# Pre-download MediaPipe face landmarker model during build
 RUN mkdir -p .models && python -c "\
-from services.model_loader import get_model_path; \
-get_model_path('face_landmarker'); \
+import urllib.request; \
+url = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task'; \
+urllib.request.urlretrieve(url, '.models/face_landmarker.task'); \
 print('MediaPipe models cached'); \
 "
 
