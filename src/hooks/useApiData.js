@@ -22,6 +22,19 @@ export function useApiData() {
   const healthIntervalRef = useRef(null);
   const statsIntervalRef = useRef(null);
 
+  const performHealthCheck = useCallback(async () => {
+    try {
+      await api.checkHealth();
+      if (api.available) {
+        setBackendAvailable(true);
+        setApiMode(true);
+      }
+    } catch {
+      setBackendAvailable(false);
+      setApiMode(false);
+    }
+  }, []);
+
   // --- Health check on mount ---
   useEffect(() => {
     performHealthCheck();
@@ -35,19 +48,6 @@ export function useApiData() {
 
     return () => clearInterval(healthIntervalRef.current);
   }, [apiMode, performHealthCheck]);
-
-  const performHealthCheck = useCallback(async () => {
-    try {
-      await api.checkHealth();
-      if (api.available) {
-        setBackendAvailable(true);
-        setApiMode(true);
-      }
-    } catch {
-      setBackendAvailable(false);
-      setApiMode(false);
-    }
-  }, []);
 
   // --- When in API mode, poll stats periodically ---
   useEffect(() => {
