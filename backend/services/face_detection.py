@@ -19,7 +19,10 @@ class FaceDetector:
         try:
             from services.model_loader import get_model_path
             model_path = get_model_path("face_landmarker")
-            base_options = mp_python.BaseOptions(model_asset_path=model_path)
+            base_options = mp_python.BaseOptions(
+                model_asset_path=model_path,
+                delegate=mp_python.BaseOptions.Delegate.CPU,
+            )
             options = vision.FaceLandmarkerOptions(
                 base_options=base_options,
                 output_face_blendshapes=False,
