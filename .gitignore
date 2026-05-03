@@ -6,3 +6,7 @@ dist
 .DS_Store
 .cache
 .claude/
+backend/.models/
+__pycache__/
+*.pyc
+pdf_text.txt

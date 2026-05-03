@@ -1,0 +1,30 @@
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# Install system dependencies for OpenCV and MediaPipe
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Pre-download MediaPipe models during build to avoid cold-start delay
+COPY services/model_loader.py services/model_loader.py
+RUN mkdir -p .models && python -c "\
+from services.model_loader import get_model_path; \
+get_model_path('face_landmarker'); \
+print('MediaPipe models cached'); \
+"
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

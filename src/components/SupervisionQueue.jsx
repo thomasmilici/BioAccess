@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   HeadsetIcon, AlertTriangle, Clock, CheckCircle, XCircle,
-  User, Building2, ChevronDown, Eye, Shield, Zap, Video,
+  User, Building2, ChevronDown, Eye, Shield, Zap, Video, Camera, Upload,
 } from 'lucide-react';
 
 const URGENCY_STYLES = {
@@ -11,10 +11,71 @@ const URGENCY_STYLES = {
   medium: { color: '#00D4FF', bg: 'bg-accent-neon/10', border: 'border-accent-neon/30', label: 'Media Priorità' },
 };
 
-export default function SupervisionQueue({ events, onResolve }) {
+export default function SupervisionQueue({ events, onResolve, apiAvailable, onSubmitFrame }) {
   const [expandedId, setExpandedId] = useState(null);
   const [processingId, setProcessingId] = useState(null);
   const [actionFeedback, setActionFeedback] = useState(null);
+  const [webcamActive, setWebcamActive] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const startWebcam = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: 'user' },
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      streamRef.current = stream;
+      setWebcamActive(true);
+      setCapturedImage(null);
+    } catch (err) {
+      console.warn('Webcam access denied:', err.message);
+    }
+  }, []);
+
+  const stopWebcam = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setWebcamActive(false);
+  }, []);
+
+  const captureFrame = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    setCapturedImage(dataUrl);
+    stopWebcam();
+  }, [stopWebcam]);
+
+  const handleAnalyzeCapture = useCallback(async (event) => {
+    if (!capturedImage || !onSubmitFrame) return;
+    setAnalyzing(true);
+    try {
+      const blob = await (await fetch(capturedImage)).blob();
+      const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+      const result = await onSubmitFrame(file, event.type || 'stable', event.turnstileId);
+      if (result) {
+        setCapturedImage(null);
+        setExpandedId(null);
+      }
+    } catch {
+      // Analysis failed silently
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [capturedImage, onSubmitFrame]);
 
   const handleAction = (eventId, approved) => {
     setProcessingId(eventId);
@@ -179,34 +240,142 @@ export default function SupervisionQueue({ events, onResolve }) {
                             </div>
                           </div>
 
-                          {/* Video snippet placeholder */}
+                          {/* Video snippet / Webcam capture */}
                           <div className="p-3 rounded-lg bg-bg-primary/70 border border-bg-border/30">
                             <div className="flex items-center gap-1.5 mb-2">
-                              <Video className="w-3.5 h-3.5 text-accent-neon" />
-                              <span className="text-[10px] text-gray-500 uppercase tracking-wider">Snippet Acquisizione</span>
+                              {apiAvailable ? (
+                                <Camera className="w-3.5 h-3.5 text-accent-green" />
+                              ) : (
+                                <Video className="w-3.5 h-3.5 text-accent-neon" />
+                              )}
+                              <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                                {apiAvailable ? 'Acquisizione Live' : 'Snippet Acquisizione'}
+                              </span>
+                              {apiAvailable && (
+                                <span className="ml-auto text-[9px] text-accent-green font-semibold">AI Ready</span>
+                              )}
                             </div>
-                            <div className="aspect-video bg-black/50 rounded-lg flex items-center justify-center border border-bg-border/30 relative overflow-hidden">
-                              <div className="text-center">
-                                <Eye className="w-8 h-8 text-gray-600 mx-auto mb-1" />
-                                <p className="text-[10px] text-gray-600">Frame Acquisizione</p>
-                                <p className="text-[9px] text-gray-700 mt-0.5">ID: {event.id}</p>
+
+                            {apiAvailable ? (
+                              <div className="space-y-2">
+                                {/* Live webcam or captured image */}
+                                {!capturedImage ? (
+                                  <div className="aspect-video bg-black/70 rounded-lg flex items-center justify-center border border-bg-border/30 relative overflow-hidden">
+                                    {webcamActive ? (
+                                      <video
+                                        ref={videoRef}
+                                        autoPlay
+                                        playsInline
+                                        muted
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="text-center z-10">
+                                        <Camera className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                                        <p className="text-[10px] text-gray-500">Webcam disponibile</p>
+                                      </div>
+                                    )}
+                                    {webcamActive && (
+                                      <motion.div
+                                        className="absolute inset-0 border-2 border-accent-green/30 rounded-lg"
+                                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                      />
+                                    )}
+                                    <canvas ref={canvasRef} className="hidden" />
+                                  </div>
+                                ) : (
+                                  <div className="aspect-video bg-black/70 rounded-lg flex items-center justify-center border border-accent-green/30 relative overflow-hidden">
+                                    <img
+                                      src={capturedImage}
+                                      alt="Captured frame"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )}
+
+                                {/* Webcam controls */}
+                                <div className="flex gap-2">
+                                  {!capturedImage ? (
+                                    <>
+                                      {!webcamActive ? (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); startWebcam(); }}
+                                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg
+                                                     bg-accent-neon/10 border border-accent-neon/20 text-accent-neon
+                                                     hover:bg-accent-neon/20 transition-colors text-[10px] font-semibold"
+                                        >
+                                          <Camera className="w-3 h-3" />
+                                          Avvia Webcam
+                                        </button>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); captureFrame(); }}
+                                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg
+                                                       bg-accent-green/10 border border-accent-green/30 text-accent-green
+                                                       hover:bg-accent-green/20 transition-colors text-[10px] font-semibold"
+                                          >
+                                            <Upload className="w-3 h-3" />
+                                            Cattura Frame
+                                          </button>
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); stopWebcam(); }}
+                                            className="px-3 py-1.5 rounded-lg bg-accent-red/10 border border-accent-red/20
+                                                       text-accent-red hover:bg-accent-red/20 transition-colors text-[10px]"
+                                          >
+                                            Stop
+                                          </button>
+                                        </>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setCapturedImage(null); }}
+                                        className="px-3 py-1.5 rounded-lg bg-bg-primary border border-bg-border/30
+                                                   text-gray-400 hover:text-white transition-colors text-[10px]"
+                                      >
+                                        Riscatta
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleAnalyzeCapture(event); }}
+                                        disabled={analyzing}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg
+                                                   bg-accent-purple/10 border border-accent-purple/30 text-accent-purple
+                                                   hover:bg-accent-purple/20 transition-colors text-[10px] font-semibold
+                                                   disabled:opacity-50"
+                                      >
+                                        {analyzing ? 'Analisi in corso...' : 'Analizza con AI'}
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               </div>
-                              {/* Simulated scan line */}
-                              <motion.div
-                                className="absolute left-0 w-full h-0.5 bg-accent-neon/30"
-                                animate={{ top: ['0%', '100%', '0%'] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                              />
-                              {/* Simulated face detection box */}
-                              <motion.div
-                                className="absolute w-1/2 h-1/2 border border-accent-neon/20 rounded-lg"
-                                animate={{
-                                  scale: [1, 1.05, 1],
-                                  opacity: [0.3, 0.5, 0.3],
-                                }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                              />
-                            </div>
+                            ) : (
+                              <div className="aspect-video bg-black/50 rounded-lg flex items-center justify-center border border-bg-border/30 relative overflow-hidden">
+                                <div className="text-center">
+                                  <Eye className="w-8 h-8 text-gray-600 mx-auto mb-1" />
+                                  <p className="text-[10px] text-gray-600">Frame Acquisizione</p>
+                                  <p className="text-[9px] text-gray-700 mt-0.5">ID: {event.id}</p>
+                                </div>
+                                {/* Simulated scan line */}
+                                <motion.div
+                                  className="absolute left-0 w-full h-0.5 bg-accent-neon/30"
+                                  animate={{ top: ['0%', '100%', '0%'] }}
+                                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                                />
+                                {/* Simulated face detection box */}
+                                <motion.div
+                                  className="absolute w-1/2 h-1/2 border border-accent-neon/20 rounded-lg"
+                                  animate={{
+                                    scale: [1, 1.05, 1],
+                                    opacity: [0.3, 0.5, 0.3],
+                                  }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                />
+                              </div>
+                            )}
                           </div>
 
                           {/* Pipeline data snapshot */}

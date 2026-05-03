@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wifi, WifiOff, Clock, Bell, ShieldCheck, Activity } from 'lucide-react';
 
-export default function Header({ systemStats, isRunning }) {
+export default function Header({ systemStats, isRunning, backendAvailable }) {
   const [time, setTime] = useState(new Date());
   const [notifications, setNotifications] = useState([]);
 
@@ -49,6 +49,18 @@ export default function Header({ systemStats, isRunning }) {
           <span className="text-gray-600">|</span>
           <span className="text-gray-500">{systemStats.tlsVersion}</span>
         </div>
+
+        {backendAvailable !== undefined && (
+          <>
+            <div className="h-4 w-px bg-bg-border" />
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className={`w-1.5 h-1.5 rounded-full ${backendAvailable ? 'bg-accent-green' : backendAvailable === null ? 'bg-accent-amber' : 'bg-gray-500'} animate-pulse`} />
+              <span className="text-gray-500">
+                {backendAvailable === null ? 'AI: Checking' : backendAvailable ? 'AI: Live' : 'AI: Simulation'}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-4">

@@ -9,9 +9,9 @@ import ConfidenceModel from './components/ConfidenceModel';
 import SupervisionQueue from './components/SupervisionQueue';
 import SecurityIndicators from './components/SecurityIndicators';
 import EarlyExitFallback from './components/EarlyExitFallback';
-import { useSimulatedData } from './hooks/useSimulatedData';
+import { useApiData } from './hooks/useApiData';
 import {
-  Activity, Pause, Play, RefreshCw,
+  Activity, Pause, Play, RefreshCw, Cpu,
 } from 'lucide-react';
 
 export default function App() {
@@ -21,9 +21,11 @@ export default function App() {
     systemStats,
     pipelineActivity,
     isRunning,
+    backendAvailable,
     toggleSimulation,
     resolveSupervisionEvent,
-  } = useSimulatedData();
+    submitFrame,
+  } = useApiData();
 
   const [activeSection, setActiveSection] = useState('dashboard');
 
@@ -73,7 +75,7 @@ export default function App() {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        <SupervisionQueue events={supervisionQueue} onResolve={resolveSupervisionEvent} />
+        <SupervisionQueue events={supervisionQueue} onResolve={resolveSupervisionEvent} apiAvailable={backendAvailable} onSubmitFrame={submitFrame} />
       </motion.div>
     ),
     security: (
@@ -115,7 +117,7 @@ export default function App() {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Header systemStats={systemStats} isRunning={isRunning} />
+        <Header systemStats={systemStats} isRunning={isRunning} backendAvailable={backendAvailable} />
 
         <main className="flex-1 p-6 overflow-y-auto">
           {/* Section title */}
@@ -132,7 +134,7 @@ export default function App() {
               <p className="text-xs text-gray-500 mt-0.5">
                 {activeSection === 'dashboard' && 'Vista complessiva del sistema di controllo accessi biometrico'}
                 {activeSection === 'turnstiles' && '5 Dipendenti Stabili · 2 Non Stabili · 1 Visitatori — 8 varchi totali'}
-                {activeSection === 'pipeline' && 'Stato della pipeline AI: Acquisizione → Matching → Decisione'}
+                {activeSection === 'pipeline' && `Stato della pipeline AI: Acquisizione → Matching → Decisione ${backendAvailable ? '[AI Engine Live]' : '[Simulazione]'}`}
                 {activeSection === 'supervision' && `Interfaccia operatore — ${supervisionQueue.length} eventi in attesa di revisione`}
                 {activeSection === 'security' && 'Crittografia AES-256-GCM · TLS 1.3 · Audit immutabile'}
                 {activeSection === 'logs' && 'Registro eventi crittograficamente verificabile'}
@@ -140,6 +142,14 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* AI Engine status badge */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-primary/60 border border-bg-border/30 text-[10px]">
+                <span className={`w-2 h-2 rounded-full ${backendAvailable ? 'bg-accent-green' : backendAvailable === null ? 'bg-accent-amber' : 'bg-gray-500'} animate-pulse`} />
+                <span className="text-gray-400">
+                  {backendAvailable === null ? 'Checking AI...' : backendAvailable ? 'AI Engine Live' : 'Simulation Mode'}
+                </span>
+              </div>
+
               {/* Simulation controls */}
               <motion.button
                 onClick={toggleSimulation}
