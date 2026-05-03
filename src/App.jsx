@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -11,7 +11,7 @@ import SecurityIndicators from './components/SecurityIndicators';
 import EarlyExitFallback from './components/EarlyExitFallback';
 import { useApiData } from './hooks/useApiData';
 import {
-  Activity, Pause, Play, RefreshCw, Cpu,
+  Activity, Pause, Play, RefreshCw,
 } from 'lucide-react';
 
 export default function App() {

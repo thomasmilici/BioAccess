@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Sigma, Info } from 'lucide-react';
+import { Calculator, Sigma } from 'lucide-react';
 import { CONFIDENCE_WEIGHTS } from '../data/mockData';
 
 export default function ConfidenceModel({ turnstiles }) {
@@ -33,8 +33,6 @@ export default function ConfidenceModel({ turnstiles }) {
     w4: 'live',
     w5: 'geom',
   };
-
-  const maxBarWidth = 300;
 
   return (
     <div className="glass-hover rounded-xl p-5">

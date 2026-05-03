@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { UserCheck, UserCog, UserPlus, ArrowRight, Circle, Zap } from 'lucide-react';
+import { UserCheck, UserCog, UserPlus, Circle, Zap } from 'lucide-react';
 import { TURNSTILE_CONFIG } from '../data/mockData';
 
 const TYPE_ICONS = { stable: UserCheck, nonStable: UserCog, visitor: UserPlus };

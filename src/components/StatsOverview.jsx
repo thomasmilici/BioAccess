@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
-import { Users, DoorOpen, Activity, TrendingUp, AlertTriangle, Shield } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Users, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 
 const STAT_CARDS = [
   { key: 'todayPassages', label: 'Transiti Oggi', icon: Users, color: '#00D4FF', format: v => v.toLocaleString() },
@@ -10,15 +9,6 @@ const STAT_CARDS = [
 ];
 
 export default function StatsOverview({ stats }) {
-  const [animatedValues, setAnimatedValues] = useState({});
-
-  useEffect(() => {
-    STAT_CARDS.forEach(card => {
-      const target = typeof stats[card.key] === 'string' ? parseFloat(stats[card.key]) : stats[card.key];
-      setAnimatedValues(prev => ({ ...prev, [card.key]: target }));
-    });
-  }, [stats]);
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {STAT_CARDS.map((card, i) => {

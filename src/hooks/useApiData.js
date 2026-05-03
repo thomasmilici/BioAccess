@@ -34,7 +34,7 @@ export function useApiData() {
     }, 30000);
 
     return () => clearInterval(healthIntervalRef.current);
-  }, [apiMode]);
+  }, [apiMode, performHealthCheck]);
 
   const performHealthCheck = useCallback(async () => {
     try {

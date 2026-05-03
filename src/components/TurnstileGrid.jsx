@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { DoorOpen } from 'lucide-react';
 import TurnstileCard from './TurnstileCard';
 import { TURNSTILE_CONFIG } from '../data/mockData';
 

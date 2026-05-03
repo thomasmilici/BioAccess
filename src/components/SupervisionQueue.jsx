@@ -138,7 +138,7 @@ export default function SupervisionQueue({ events, onResolve, apiAvailable, onSu
       ) : (
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
           <AnimatePresence>
-            {events.map((event, i) => {
+            {events.map((event) => {
               const urgency = URGENCY_STYLES[event.urgency];
               const isExpanded = expandedId === event.id;
               const isProcessing = processingId === event.id;

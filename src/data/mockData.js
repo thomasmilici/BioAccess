@@ -77,8 +77,6 @@ export const CONFIDENCE_WEIGHTS = {
 // Dati iniziali per i varchi
 const generateTurnstile = (id, type) => {
   const config = TURNSTILE_CONFIG[type];
-  const baseConf = config.baseConfidence.min +
-    Math.random() * (config.baseConfidence.max - config.baseConfidence.min);
 
   const sim = 0.7 + Math.random() * 0.3;
   const stab = 0.7 + Math.random() * 0.3;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, ChevronRight, Play, Pause, Zap, CheckCircle2, Loader2 } from 'lucide-react';
+import { Cpu, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { PIPELINE_STAGES } from '../data/mockData';
 
 export default function AIPipeline({ pipelineActivity }) {
