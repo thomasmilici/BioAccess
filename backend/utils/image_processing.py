@@ -4,7 +4,6 @@ from typing import Optional
 
 import cv2
 import numpy as np
-from PIL import Image
 
 from config import settings
 

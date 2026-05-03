@@ -2,10 +2,7 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 python-multipart>=0.0.9
 mediapipe>=0.10.30
-# deepface requires tensorflow (~2GB). Using MediaPipe geometric embedding instead.
 opencv-python-headless>=4.10.0
 numpy>=2.0.0
 pydantic>=2.9.0
 python-dotenv>=1.0.1
-Pillow>=10.4.0
-scipy>=1.14.0
